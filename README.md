@@ -63,41 +63,66 @@ This project showcases a complete **ELT (Extract, Load, Transform)** architectur
 
 ## 🏗️ Architecture
 
+### **Dual-Dashboard Architecture**
+
+```mermaid
+graph TB
+    subgraph "Data Source"
+        A[🚆 ATS Simulator<br/>Python Producer<br/>Docker Container]
+    end
+    
+    subgraph "Message Broker"
+        B[📨 Apache Kafka<br/>Confluent Platform 7.5.0<br/>Topic: ats_telemetry]
+    end
+    
+    subgraph "Data Warehouse - Snowflake"
+        C[💾 ATS_RAW_JSON<br/>VARIANT Column<br/>Schema-flexible JSON]
+        D[🔄 ATS_TRANSFORMED<br/>Dynamic Table<br/>Auto-refresh 1 min]
+        E[📊 Analytical Views<br/>ATS_ALERTS<br/>ATS_HOURLY_STATS<br/>ATS_LATEST_STATUS]
+    end
+    
+    subgraph "Dashboard 1: External"
+        F[🐳 Streamlit Dashboard<br/>Docker Container<br/>localhost:8501<br/>👥 Train Operators<br/>🔐 Password Auth]
+    end
+    
+    subgraph "Dashboard 2: Native"
+        G[🌨️ Streamlit-in-Snowflake<br/>Snowsight UI<br/>👥 Data Analysts<br/>🔐 Snowflake RBAC]
+    end
+    
+    A -->|JSON Telemetry<br/>30-second intervals| B
+    B -->|Kafka Connect 2.2.0<br/>RSA Authentication| C
+    C -->|ELT Pattern<br/>Raw Ingestion| D
+    D -->|Transform<br/>Extract Fields| E
+    E -->|ODBC Query<br/>Password Auth| F
+    E -->|Snowpark API<br/>Session Context| G
+    
+    style A fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    style B fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style C fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style D fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style E fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style F fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    style G fill:#e0f2f1,stroke:#004d40,stroke-width:2px
 ```
-┌─────────────────┐
-│  ATS Simulator  │  (Python)
-│   (producer.py) │
-└────────┬────────┘
-         │ JSON telemetry
-         ▼
-┌─────────────────┐
-│  Apache Kafka   │  Topic: ats_telemetry
-│   (Confluent)   │
-└────────┬────────┘
-         │ Kafka Connector
-         ▼
-┌─────────────────┐
-│   Snowflake     │
-│  ┌───────────┐  │
-│  │ RAW_JSON  │  │ ◄── VARIANT column (raw ingestion)
-│  └─────┬─────┘  │
-│        │         │
-│  ┌─────▼─────┐  │
-│  │ DYNAMIC   │  │ ◄── Auto-transforms every 1 min
-│  │  TABLE    │  │
-│  └─────┬─────┘  │
-│        │         │
-│  ┌─────▼─────┐  │
-│  │  VIEWS    │  │ ◄── Analytical layers
-│  └───────────┘  │
-└────────┬────────┘
-         │ Query
-         ▼
-┌─────────────────┐
-│   Streamlit     │  (Real-time Dashboard)
-│   Dashboard     │
-└─────────────────┘
-```
+
+### **Data Flow**
+
+1. **Simulate** → ATS Simulator generates realistic train telemetry (passengers, power, location)
+2. **Stream** → Kafka receives JSON messages every 30 seconds with high reliability
+3. **Ingest** → Snowflake Kafka Connector loads raw JSON into VARIANT column (ELT pattern)
+4. **Transform** → Dynamic Tables automatically extract structured fields every minute
+5. **Analyze** → Views provide analytical layers (alerts, statistics, status)
+6. **Visualize** → Two dashboards serve different user personas:
+   - **External**: Docker-based Streamlit for operational monitoring
+   - **Native**: Snowflake-embedded Streamlit for data analysts
+
+### **Key Architecture Decisions**
+
+1. **ELT Pattern**: Raw JSON → Snowflake → Transform in warehouse
+2. **VARIANT Columns**: Schema flexibility for evolving telemetry
+3. **Dynamic Tables**: Automatic near real-time transformation (1-minute lag)
+4. **Dual Dashboards**: Serve multiple user personas (operations + analytics)
+5. **Kafka as Backbone**: Reliable, scalable message streaming with at-least-once delivery
 
 ## 📁 Project Structure
 
