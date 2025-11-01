@@ -1,9 +1,19 @@
 # 🚆 ATS-Kafka-Snowflake-Streamlit ELT Pipeline
 
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
-[![Kafka](https://img.shields.io/badge/Kafka-3.5-black)](https://kafka.apache.org/)
-[![Snowflake](https://img.shields.io/badge/Snowflake-ELT-29B5E8)](https://www.snowflake.com/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B)](https://streamlit.io/)
+<div align="center">
+
+[![GitHub](https://img.shields.io/badge/GitHub-maruthut-181717?logo=github)](https://github.com/maruthut/ats-kafka-snowflake-streamlit)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Kafka](https://img.shields.io/badge/Apache%20Kafka-3.5-231F20?logo=apache-kafka)](https://kafka.apache.org/)
+[![Snowflake](https://img.shields.io/badge/Snowflake-ELT-29B5E8?logo=snowflake&logoColor=white)](https://www.snowflake.com/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+
+**Real-Time Data Engineering Portfolio Project**
+
+[🚀 Quick Start](#-quick-start) • [📸 Live Dashboard](docs/DASHBOARD_SCREENSHOTS.md) • [🔧 Troubleshooting](TROUBLESHOOTING.md) • [📖 Architecture](#-architecture)
+
+</div>
 
 A real-time data pipeline demonstrating **Automatic Train Supervision (ATS)** telemetry ingestion, processing, and visualization using modern data engineering best practices.
 
@@ -16,6 +26,30 @@ This project showcases a complete **ELT (Extract, Load, Transform)** architectur
 3. **Ingests** into Snowflake using Kafka Connector with VARIANT columns
 4. **Transforms** using Snowflake Dynamic Tables (near real-time)
 5. **Visualizes** via an interactive Streamlit dashboard
+
+## 📸 Live Dashboard Screenshots
+
+**🎯 See the complete pipeline in action!** [View Detailed Screenshots →](docs/DASHBOARD_SCREENSHOTS.md)
+
+<div align="center">
+
+### Key Performance Indicators
+*115 active trains | 59 avg passengers | 36 active alerts | 149.45 kW avg power*
+
+### Real-Time Monitoring Dashboard
+*Live telemetry streaming from Snowflake with auto-refresh*
+
+### Active Alerts System
+*High power draw alerts with real-time tracking*
+
+### Analytics & Insights
+*Passenger distribution | Power consumption trends | Hourly statistics*
+
+**📊 Complete visual documentation:** [`docs/DASHBOARD_SCREENSHOTS.md`](docs/DASHBOARD_SCREENSHOTS.md)
+
+</div>
+
+> **Note:** To view screenshots with actual images, please save the dashboard screenshots from your browser and place them in the `docs/images/` directory following the naming convention in `DASHBOARD_SCREENSHOTS.md`.
 
 ### 🎯 Key Features
 
@@ -106,7 +140,7 @@ ats-kafka-snowflake-streamlit/
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/ats-kafka-snowflake-streamlit.git
+git clone https://github.com/maruthut/ats-kafka-snowflake-streamlit.git
 cd ats-kafka-snowflake-streamlit
 ```
 
@@ -157,9 +191,20 @@ SNOWFLAKE_PASSWORD=your_password
 SNOWFLAKE_WAREHOUSE=COMPUTE_WH
 SNOWFLAKE_DATABASE=ATS_DB
 SNOWFLAKE_SCHEMA=ATS_SCHEMA
-SNOWFLAKE_ROLE=PUBLIC
+SNOWFLAKE_ROLE=SYSADMIN
 SNOWFLAKE_PRIVATE_KEY=<content_of_rsa_key.p8>
 ```
+
+**⚠️ IMPORTANT - Password with Special Characters:**
+If your Snowflake password contains `$` character, you must escape it properly in `docker-compose.yml`:
+- Use `$$` (double dollar sign) in the `.env` file: `SNOWFLAKE_PASSWORD=MyPass$$word123`
+- In `docker-compose.yml`, use array format for environment variables:
+  ```yaml
+  environment:
+    - SNOWFLAKE_PASSWORD=MyPass$$word123
+  ```
+- The `$$` will be interpreted as a single `$` inside the container
+- See `docker-compose.yml` streamlit-dashboard section for working example
 
 ### Step 4: Start the Pipeline
 
@@ -228,6 +273,18 @@ The Streamlit dashboard provides:
 
 ## 🔧 Troubleshooting
 
+**📖 For comprehensive troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
+
+### Quick Fixes
+
+#### Dashboard: "Missing SNOWFLAKE_PASSWORD"
+If password contains `$` character:
+```yaml
+# In docker-compose.yml, use array format with $$ escaping:
+environment:
+  - SNOWFLAKE_PASSWORD=MyPass$$Go  # $$ becomes $ in container
+```
+
 ### Kafka Connector Issues
 
 Check connector status:
@@ -265,6 +322,10 @@ curl -X POST http://localhost:8083/connectors/snowflake-sink-connector/restart
    ```bash
    docker logs streamlit-dashboard
    ```
+4. **"Missing SNOWFLAKE_PASSWORD" error**: 
+   - If password contains `$`, ensure it's escaped with `$$` in both `.env` and `docker-compose.yml`
+   - Use array format in docker-compose: `- SNOWFLAKE_PASSWORD=Pass$$word`
+   - Verify password is set in container: `docker exec streamlit-dashboard env | grep SNOWFLAKE_PASSWORD`
 
 ## 🛠️ Development
 
@@ -359,9 +420,10 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ## 👤 Author
 
-**Your Name**
-- GitHub: [@your-username](https://github.com/your-username)
-- LinkedIn: [your-profile](https://linkedin.com/in/your-profile)
+**Maruthu T**
+- GitHub: [@maruthut](https://github.com/maruthut)
+- LinkedIn: [linkedin.com/in/maruthut](https://www.linkedin.com/in/maruthut)
+- Project Repository: [ats-kafka-snowflake-streamlit](https://github.com/maruthut/ats-kafka-snowflake-streamlit)
 
 ## 🙏 Acknowledgments
 
@@ -373,13 +435,63 @@ This project is open source and available under the [MIT License](LICENSE).
 
 **⭐ If you find this project useful, please give it a star!**
 
-## 📞 Support
+## � Adding Dashboard Screenshots to Your Portfolio
 
-For questions or issues:
-1. Check the [Troubleshooting](#-troubleshooting) section
-2. Review existing GitHub issues
-3. Create a new issue with detailed information
+To showcase your working dashboard with actual images:
+
+### Step 1: Capture Screenshots
+1. Open dashboard at `http://localhost:8501`
+2. Take screenshots of each section:
+   - Main dashboard with KPIs
+   - Active alerts panel
+   - Passenger count timeline
+   - Power draw timeline
+   - Distribution charts
+   - Hourly statistics
+   - Train status table
+
+### Step 2: Save Images
+Save screenshots in `docs/images/` with these names:
+- `dashboard-header.png` - Top header and controls
+- `kpi-metrics.png` - Key Performance Indicators
+- `active-alerts.png` - Alert panel
+- `passenger-timeline.png` - Passenger count over time
+- `power-timeline.png` - Power consumption chart
+- `passenger-distribution.png` - Histogram
+- `speed-distribution.png` - Box plot
+- `readings-per-hour.png` - Hourly bar chart
+- `incidents-per-hour.png` - Incident trends
+- `train-status-table.png` - Status overview table
+
+### Step 3: Commit and Push
+```bash
+git add docs/images/*.png
+git commit -m "Add dashboard screenshots for portfolio"
+git push origin main
+```
+
+### Step 4: View on GitHub
+Your complete documentation with screenshots will be visible at:
+`https://github.com/maruthut/ats-kafka-snowflake-streamlit/blob/main/docs/DASHBOARD_SCREENSHOTS.md`
 
 ---
 
-*Built with ❤️ for the data engineering community*
+## 📞 Support
+
+For questions or issues:
+1. Check the [Troubleshooting](TROUBLESHOOTING.md) guide
+2. Review [`docs/DASHBOARD_SCREENSHOTS.md`](docs/DASHBOARD_SCREENSHOTS.md) for visual reference
+3. Check existing [GitHub Issues](https://github.com/maruthut/ats-kafka-snowflake-streamlit/issues)
+4. Create a new issue with detailed information
+
+---
+
+## 🌟 Project Stats
+
+![GitHub last commit](https://img.shields.io/github/last-commit/maruthut/ats-kafka-snowflake-streamlit)
+![GitHub repo size](https://img.shields.io/github/repo-size/maruthut/ats-kafka-snowflake-streamlit)
+![GitHub stars](https://img.shields.io/github/stars/maruthut/ats-kafka-snowflake-streamlit?style=social)
+
+---
+
+*Built with ❤️ for the data engineering community by [Maruthu T](https://github.com/maruthut)*

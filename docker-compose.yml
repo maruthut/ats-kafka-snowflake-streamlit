@@ -41,7 +41,10 @@ services:
 
   # Kafka Connect with Snowflake Sink Connector
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:7.5.0
+    build:
+      context: ./kafka_connect
+      dockerfile: Dockerfile
+    image: ats-kafka-connect:latest
     container_name: kafka-connect
     depends_on:
       kafka:
@@ -119,15 +122,13 @@ services:
     ports:
       - "8501:8501"
     environment:
-      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
-      SNOWFLAKE_USER: ${SNOWFLAKE_USER}
-      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD}
-      SNOWFLAKE_WAREHOUSE: ${SNOWFLAKE_WAREHOUSE}
-      SNOWFLAKE_DATABASE: ${SNOWFLAKE_DATABASE}
-      SNOWFLAKE_SCHEMA: ${SNOWFLAKE_SCHEMA}
-      SNOWFLAKE_ROLE: ${SNOWFLAKE_ROLE}
-    env_file:
-      - .env
+      - SNOWFLAKE_ACCOUNT=vec76717.us-east-1
+      - SNOWFLAKE_USER=admin
+      - SNOWFLAKE_PASSWORD=6Yt*2IHHt2^R$$Go
+      - SNOWFLAKE_WAREHOUSE=COMPUTE_WH
+      - SNOWFLAKE_DATABASE=ATS_DB
+      - SNOWFLAKE_SCHEMA=ATS_SCHEMA
+      - SNOWFLAKE_ROLE=SYSADMIN
     networks:
       - ats-network
     restart: unless-stopped

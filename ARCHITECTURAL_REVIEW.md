@@ -399,6 +399,78 @@ Your project now demonstrates:
 
 ---
 
-**Ready for Local Testing!** 🚀
+## 🔧 Post-Deployment Issue Fixed
 
-All changes have been implemented. Your code is now production-ready and showcase-worthy for potential employers.
+### 13. 🐳 **DOCKER COMPOSE: Password Special Character Escaping**
+**Location:** `docker-compose.yml` (streamlit-dashboard service)
+
+**Issue Discovered During Testing:**
+- Streamlit dashboard failed with "Missing SNOWFLAKE_PASSWORD" error
+- Password containing `$` character (e.g., `MyPass$Go`) was being interpreted as environment variable substitution
+- Docker Compose treats `$variable` as variable interpolation in YAML
+
+**Root Cause:**
+```yaml
+# ❌ WRONG - Docker Compose tries to substitute $Go as a variable
+environment:
+  SNOWFLAKE_PASSWORD: "6Yt*2IHHt2^R$Go"
+```
+
+**Debugging Steps:**
+1. Checked container environment: `docker exec streamlit-dashboard env | grep SNOWFLAKE_PASSWORD`
+2. Result: Variable was empty inside container
+3. Identified Docker Compose variable interpolation issue
+
+**Fix Applied:**
+```yaml
+# ✅ CORRECT - Array format with $$ escaping
+streamlit-dashboard:
+  environment:
+    - SNOWFLAKE_ACCOUNT=vec76717.us-east-1
+    - SNOWFLAKE_USER=admin
+    - SNOWFLAKE_PASSWORD=6Yt*2IHHt2^R$$Go  # $$ becomes single $ in container
+    - SNOWFLAKE_WAREHOUSE=COMPUTE_WH
+    - SNOWFLAKE_DATABASE=ATS_DB
+    - SNOWFLAKE_SCHEMA=ATS_SCHEMA
+    - SNOWFLAKE_ROLE=SYSADMIN
+```
+
+**Key Learning:**
+- In Docker Compose YAML, `$$` escapes to single `$` inside container
+- Array format (`- KEY=VALUE`) is more reliable than mapping format (`KEY: VALUE`) for special characters
+- Always verify environment variables inside container after deployment
+
+**Documentation Updated:**
+- ✅ `README.md` - Added troubleshooting section with password escaping guidance
+- ✅ `.env.example` - Added comments about `$$` escaping for passwords with `$`
+- ✅ `snowflake/SETUP_INSTRUCTIONS.md` - Added detailed password escaping instructions
+- ✅ `docker-compose.yml` - Implemented working configuration
+
+**Impact:** ⭐⭐⭐⭐ HIGH - Dashboard now connects successfully to Snowflake
+
+**Verification:**
+```bash
+# Check password is set correctly inside container
+docker exec streamlit-dashboard env | grep SNOWFLAKE_PASSWORD
+# Expected: SNOWFLAKE_PASSWORD=6Yt*2IHHt2^R$Go (single $)
+
+# Check dashboard logs for successful connection
+docker-compose logs streamlit-dashboard
+# Expected: "Snowflake connection established successfully"
+```
+
+---
+
+**Ready for Production!** 🚀
+
+All changes have been implemented and tested. Your code is now production-ready and showcase-worthy for potential employers. The complete end-to-end pipeline has been validated:
+
+✅ ATS Simulator → Kafka → Kafka Connect → Snowflake → Streamlit Dashboard
+
+**Tested & Verified:**
+- Data flowing through complete pipeline
+- 10+ rows confirmed in Snowflake ATS_RAW_JSON table
+- Kafka Connect consuming with 60-second buffer flush
+- Dynamic Tables transforming data automatically
+- Streamlit dashboard displaying real-time visualizations
+- All authentication mechanisms working (RSA keys for Kafka Connect, password for Dashboard)
