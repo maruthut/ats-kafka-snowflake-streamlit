@@ -70,11 +70,10 @@ This project showcases a complete **ELT (Extract, Load, Transform)** architectur
 ```
 ats-kafka-snowflake-streamlit/
 ├── docker-compose.yml              # Orchestrates all services
+├── test_pipeline.py                # Pipeline testing script
 ├── .env.example                    # Environment variables template
 ├── .gitignore                      # Git ignore rules
 ├── README.md                       # This file
-├── setup_github.py                 # Python: GitHub setup automation
-├── test_pipeline.py                # Python: Pipeline testing script
 │
 ├── ats_simulator/                  # Telemetry simulator
 │   ├── producer.py                 # Kafka producer
@@ -83,7 +82,7 @@ ats-kafka-snowflake-streamlit/
 │
 ├── kafka_connect/                  # Kafka-Snowflake integration
 │   ├── snowflake_connector_config.json
-│   └── register_connector.py       # Python: Connector registration
+│   └── register_connector.py       # Connector registration
 │
 ├── snowflake/                      # Snowflake database objects
 │   ├── schema.sql                  # Tables, views, dynamic tables
@@ -178,12 +177,18 @@ docker-compose ps
 ### Step 5: Register Snowflake Connector
 
 ```bash
-# Using Python script (cross-platform)
 cd kafka_connect
 python register_connector.py
 ```
 
-### Step 6: Access the Dashboard
+### Step 6: Verify Pipeline
+
+```bash
+# Run automated tests
+python test_pipeline.py
+```
+
+### Step 7: Access the Dashboard
 
 Open your browser and navigate to:
 ```

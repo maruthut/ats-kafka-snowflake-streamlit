@@ -182,12 +182,14 @@ lsof -i :8501
 ## 🚀 Push to GitHub
 
 ```bash
-# Run automated setup
-python setup_github.py
+# 1. Create a new repository on GitHub
+#    Go to: https://github.com/new
+#    Repository name: ats-kafka-snowflake-streamlit
+#    Description: Real-time ATS telemetry pipeline with Kafka, Snowflake, and Streamlit
+#    Make it Public (for portfolio)
+#    Do NOT initialize with README
 
-# Or manually
-git add .
-git commit -m "Initial commit: ATS pipeline"
+# 2. Add remote and push
 git remote add origin https://github.com/YOUR_USERNAME/ats-kafka-snowflake-streamlit.git
 git push -u origin main
 ```
@@ -207,10 +209,10 @@ docker-compose down -v
 
 ## 📚 Additional Resources
 
-- **README.md** - Complete documentation
-- **SNOWFLAKE_SETUP.md** - Detailed Snowflake guide
-- **DEPLOYMENT_CHECKLIST.md** - Step-by-step checklist
-- **PROJECT_SUMMARY.md** - Technical details
+- **README.md** - Complete project documentation
+- **SNOWFLAKE_SETUP.md** - Detailed Snowflake configuration guide
+- **DEPLOYMENT_CHECKLIST.md** - Step-by-step deployment checklist
+- **PROJECT_SUMMARY.md** - Technical project summary
 
 ## ⏱️ Time Estimates
 

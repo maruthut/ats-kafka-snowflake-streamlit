@@ -74,24 +74,22 @@
 ## GitHub Setup
 
 ### ✅ Repository Initialization
-- [ ] Run `.\setup_github.ps1`
-- [ ] Or manually:
-  - [ ] `git init`
-  - [ ] `git add .`
-  - [ ] `git commit -m "Initial commit: ATS Kafka Snowflake Streamlit"`
-  - [ ] `git branch -M main`
+- [ ] Repository already initialized
+- [ ] All files committed to Git
+- [ ] On main branch
 
-### ✅ GitHub Repository
-- [ ] Created new repo on GitHub: `ats-kafka-snowflake-streamlit`
-- [ ] Made repository public (for portfolio)
-- [ ] Added remote: `git remote add origin https://github.com/YOUR_USERNAME/ats-kafka-snowflake-streamlit.git`
-- [ ] Pushed code: `git push -u origin main`
+### ✅ Push to GitHub
+- [ ] Create new repo on GitHub: https://github.com/new
+  - [ ] Repository name: `ats-kafka-snowflake-streamlit`
+  - [ ] Description: "Real-time ATS telemetry pipeline with Kafka, Snowflake, and Streamlit"
+  - [ ] Make it Public (for portfolio)
+  - [ ] Do NOT initialize with README
+- [ ] Add remote: `git remote add origin https://github.com/YOUR_USERNAME/ats-kafka-snowflake-streamlit.git`
+- [ ] Push code: `git push -u origin main`
 
-### ✅ Documentation Updates
-- [ ] Updated README.md with your GitHub username
-- [ ] Updated README.md with your LinkedIn profile
-- [ ] Added screenshots to repository
-- [ ] Created repository topics/tags:
+### ✅ GitHub Repository Settings
+- [ ] Add repository description
+- [ ] Add repository topics/tags:
   - [ ] `kafka`
   - [ ] `snowflake`
   - [ ] `streamlit`
@@ -99,6 +97,9 @@
   - [ ] `docker`
   - [ ] `real-time-data`
   - [ ] `data-engineering`
+  - [ ] `python`
+- [ ] Add GitHub repository link to your profile
+- [ ] (Optional) Add screenshots to repository
 
 ## Testing
 
