@@ -6,6 +6,7 @@ Registers the Snowflake sink connector with Kafka Connect
 import json
 import time
 import sys
+import os
 import urllib.request
 import urllib.error
 
@@ -21,12 +22,37 @@ def print_color(message, color):
     print(f"{color}{message}{Colors.RESET}")
 
 def load_connector_config():
-    """Load connector configuration from JSON file"""
+    """
+    Load connector configuration from JSON file and substitute environment variables.
+    
+    Returns:
+        dict: Connector configuration with env vars substituted
+    """
     try:
-        with open('snowflake_connector_config.json', 'r') as f:
-            return json.load(f)
+        config_path = os.path.join(os.path.dirname(__file__), 'snowflake_connector_config.json')
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        
+        # Substitute environment variables
+        config_str = json.dumps(config)
+        for key, value in os.environ.items():
+            if key.startswith('SNOWFLAKE_'):
+                config_str = config_str.replace(f'${{{key}}}', value)
+        
+        config = json.loads(config_str)
+        
+        # Validate required fields
+        required_fields = ['snowflake.url.name', 'snowflake.user.name', 'snowflake.database.name']
+        for field in required_fields:
+            if f'${{{field}' in json.dumps(config):
+                print_color(f"❌ Error: Environment variable not set for {field}", Colors.RED)
+                sys.exit(1)
+        
+        return config
+        
     except FileNotFoundError:
         print_color("❌ Error: snowflake_connector_config.json not found", Colors.RED)
+        print_color("Expected location: kafka_connect/snowflake_connector_config.json", Colors.YELLOW)
         sys.exit(1)
     except json.JSONDecodeError as e:
         print_color(f"❌ Error: Invalid JSON in config file: {e}", Colors.RED)

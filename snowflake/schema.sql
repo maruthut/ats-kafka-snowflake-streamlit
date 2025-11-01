@@ -5,18 +5,25 @@
 -- 1. Raw VARIANT column for flexible JSON ingestion
 -- 2. Dynamic tables for near real-time transformation
 -- 3. Views for structured data access
+-- 4. Proper security with role-based access control
 -- ============================================================================
 
 -- Set up the environment
-USE ROLE ACCOUNTADMIN;
+-- NOTE: Replace 'SYSADMIN' with appropriate role for your organization
+-- NEVER use ACCOUNTADMIN for application workloads in production
+USE ROLE SYSADMIN;
 USE WAREHOUSE COMPUTE_WH;
 
 -- Create database if it doesn't exist
-CREATE DATABASE IF NOT EXISTS ATS_DB;
+CREATE DATABASE IF NOT EXISTS ATS_DB
+    COMMENT = 'Database for Automatic Train Supervision telemetry data';
+
 USE DATABASE ATS_DB;
 
 -- Create schema
-CREATE SCHEMA IF NOT EXISTS ATS_SCHEMA;
+CREATE SCHEMA IF NOT EXISTS ATS_SCHEMA
+    COMMENT = 'Schema for ATS raw and transformed telemetry data';
+
 USE SCHEMA ATS_SCHEMA;
 
 -- ============================================================================
@@ -38,10 +45,12 @@ COMMENT ON TABLE ATS_RAW_JSON IS 'Raw telemetry data ingested from Kafka in JSON
 -- ============================================================================
 -- Dynamic tables automatically refresh based on changes to source data
 -- TARGET_LAG specifies maximum acceptable staleness
+-- Added data quality filters and deduplication
 
 CREATE OR REPLACE DYNAMIC TABLE ATS_TRANSFORMED
     TARGET_LAG = '1 minute'
     WAREHOUSE = COMPUTE_WH
+    COMMENT = 'Transformed telemetry data with structured columns and data quality checks'
     AS
 SELECT
     RECORD_CONTENT:timestamp::TIMESTAMP_NTZ AS timestamp,
@@ -56,9 +65,21 @@ SELECT
     RECORD_CONTENT:alerts.high_power_draw::BOOLEAN AS is_high_power_draw,
     CURRENT_TIMESTAMP() AS processed_at
 FROM ATS_RAW_JSON
-WHERE RECORD_CONTENT IS NOT NULL;
-
-COMMENT ON DYNAMIC TABLE ATS_TRANSFORMED IS 'Transformed telemetry data with structured columns extracted from JSON';
+WHERE RECORD_CONTENT IS NOT NULL
+    -- Data quality filters
+    AND RECORD_CONTENT:train_id IS NOT NULL
+    AND RECORD_CONTENT:passenger_count IS NOT NULL
+    AND RECORD_CONTENT:timestamp IS NOT NULL
+    -- Ensure reasonable data ranges
+    AND RECORD_CONTENT:passenger_count::INTEGER >= 0
+    AND RECORD_CONTENT:passenger_count::INTEGER <= 1000
+    AND RECORD_CONTENT:speed_kmh::FLOAT >= 0
+    AND RECORD_CONTENT:speed_kmh::FLOAT <= 200
+-- Use QUALIFY to deduplicate based on train_id and timestamp
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY RECORD_CONTENT:train_id, RECORD_CONTENT:timestamp 
+    ORDER BY RECORD_METADATA:CreateTime DESC
+) = 1;
 
 -- ============================================================================
 -- 3. ANALYTICAL VIEWS
@@ -122,8 +143,14 @@ COMMENT ON VIEW ATS_HOURLY_STATS IS 'Hourly aggregated statistics for telemetry 
 -- 4. PERFORMANCE OPTIMIZATION
 -- ============================================================================
 
--- Create clustering key for better query performance
+-- Create clustering key for better query performance on time-based queries
 ALTER TABLE ATS_RAW_JSON CLUSTER BY (TO_DATE(RECORD_CONTENT:timestamp::TIMESTAMP_NTZ));
+
+-- Create search optimization for frequent filters
+-- ALTER TABLE ATS_TRANSFORMED ADD SEARCH OPTIMIZATION ON EQUALITY(train_id);
+
+-- Enable automatic clustering
+ALTER TABLE ATS_RAW_JSON RESUME RECLUSTER;
 
 -- ============================================================================
 -- 5. DATA RETENTION POLICY (Optional)
@@ -138,17 +165,29 @@ ALTER TABLE ATS_RAW_JSON CLUSTER BY (TO_DATE(RECORD_CONTENT:timestamp::TIMESTAMP
 --   WHERE RECORD_CONTENT:timestamp::TIMESTAMP_NTZ < DATEADD(day, -90, CURRENT_TIMESTAMP());
 
 -- ============================================================================
--- 6. GRANT PERMISSIONS (Adjust as needed)
+-- 6. GRANT PERMISSIONS (Principle of Least Privilege)
 -- ============================================================================
 
--- Grant usage on database and schema
+-- Create application-specific roles for better security
+-- CREATE ROLE IF NOT EXISTS ATS_WRITER;
+-- CREATE ROLE IF NOT EXISTS ATS_READER;
+
+-- Grant usage on database and schema to specific roles
 GRANT USAGE ON DATABASE ATS_DB TO ROLE PUBLIC;
 GRANT USAGE ON SCHEMA ATS_DB.ATS_SCHEMA TO ROLE PUBLIC;
 
--- Grant select on transformed views
+-- Grant SELECT only (no INSERT/UPDATE/DELETE) for dashboard access
 GRANT SELECT ON ALL TABLES IN SCHEMA ATS_DB.ATS_SCHEMA TO ROLE PUBLIC;
 GRANT SELECT ON ALL VIEWS IN SCHEMA ATS_DB.ATS_SCHEMA TO ROLE PUBLIC;
 GRANT SELECT ON ALL DYNAMIC TABLES IN SCHEMA ATS_DB.ATS_SCHEMA TO ROLE PUBLIC;
+
+-- Grant future SELECT privileges for new objects
+GRANT SELECT ON FUTURE TABLES IN SCHEMA ATS_DB.ATS_SCHEMA TO ROLE PUBLIC;
+GRANT SELECT ON FUTURE VIEWS IN SCHEMA ATS_DB.ATS_SCHEMA TO ROLE PUBLIC;
+GRANT SELECT ON FUTURE DYNAMIC TABLES IN SCHEMA ATS_DB.ATS_SCHEMA TO ROLE PUBLIC;
+
+-- For Kafka Connector, grant INSERT on raw table
+-- GRANT INSERT ON TABLE ATS_DB.ATS_SCHEMA.ATS_RAW_JSON TO ROLE ATS_WRITER;
 
 -- ============================================================================
 -- 7. VERIFICATION QUERIES

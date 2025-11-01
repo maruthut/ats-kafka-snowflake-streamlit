@@ -4,6 +4,7 @@ Streamlit application for visualizing train telemetry data from Snowflake
 """
 import streamlit as st
 import snowflake.connector
+from snowflake.connector import DictCursor
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -11,9 +12,23 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 import time
+import logging
+from contextlib import contextmanager
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
+
+# Configuration constants
+MAX_DATA_POINTS = 500
+CACHE_TTL_SECONDS = 60
+QUERY_TIMEOUT_SECONDS = 30
 
 # Page configuration
 st.set_page_config(
@@ -48,9 +63,32 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-@st.cache_resource
+def validate_config():
+    """Validate required environment variables"""
+    required_vars = [
+        'SNOWFLAKE_ACCOUNT', 'SNOWFLAKE_USER', 'SNOWFLAKE_PASSWORD',
+        'SNOWFLAKE_WAREHOUSE', 'SNOWFLAKE_DATABASE', 'SNOWFLAKE_SCHEMA'
+    ]
+    
+    missing = [var for var in required_vars if not os.getenv(var)]
+    
+    if missing:
+        error_msg = f"Missing required environment variables: {', '.join(missing)}"
+        logger.error(error_msg)
+        st.error(f"❌ {error_msg}")
+        st.info("Please configure your .env file with Snowflake credentials")
+        st.stop()
+
+@st.cache_resource(ttl=3600)  # Cache for 1 hour
 def init_snowflake_connection():
-    """Initialize Snowflake connection"""
+    """
+    Initialize Snowflake connection with connection pooling.
+    
+    Returns:
+        snowflake.connector.connection: Active Snowflake connection
+    """
+    validate_config()
+    
     try:
         conn = snowflake.connector.connect(
             account=os.getenv('SNOWFLAKE_ACCOUNT'),
@@ -59,30 +97,82 @@ def init_snowflake_connection():
             warehouse=os.getenv('SNOWFLAKE_WAREHOUSE'),
             database=os.getenv('SNOWFLAKE_DATABASE'),
             schema=os.getenv('SNOWFLAKE_SCHEMA'),
-            role=os.getenv('SNOWFLAKE_ROLE', 'PUBLIC')
+            role=os.getenv('SNOWFLAKE_ROLE', 'PUBLIC'),
+            session_parameters={
+                'QUERY_TAG': 'ATS_DASHBOARD',
+                'STATEMENT_TIMEOUT_IN_SECONDS': QUERY_TIMEOUT_SECONDS
+            }
         )
+        logger.info("Snowflake connection established successfully")
         return conn
     except Exception as e:
-        st.error(f"Failed to connect to Snowflake: {e}")
+        logger.error(f"Failed to connect to Snowflake: {e}")
+        st.error(f"❌ Failed to connect to Snowflake: {e}")
         return None
 
-def execute_query(query):
-    """Execute Snowflake query and return DataFrame"""
+@contextmanager
+def get_cursor():
+    """
+    Context manager for database cursor with automatic cleanup.
+    
+    Yields:
+        cursor: Snowflake cursor object
+    """
     conn = init_snowflake_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute(query)
-            df = cursor.fetch_pandas_all()
+    if not conn:
+        yield None
+        return
+    
+    cursor = None
+    try:
+        cursor = conn.cursor(DictCursor)
+        yield cursor
+    except Exception as e:
+        logger.error(f"Cursor error: {e}")
+        raise
+    finally:
+        if cursor:
             cursor.close()
+
+@st.cache_data(ttl=CACHE_TTL_SECONDS)
+def execute_query(query, params=None):
+    """
+    Execute Snowflake query and return DataFrame with caching.
+    
+    Args:
+        query: SQL query string
+        params: Optional query parameters
+        
+    Returns:
+        pd.DataFrame: Query results as pandas DataFrame
+    """
+    with get_cursor() as cursor:
+        if not cursor:
+            return None
+        
+        try:
+            cursor.execute(query, params)
+            df = cursor.fetch_pandas_all()
+            logger.debug(f"Query returned {len(df)} rows")
             return df
         except Exception as e:
-            st.error(f"Query execution failed: {e}")
+            logger.error(f"Query execution failed: {e}")
+            st.error(f"Query failed: {e}")
             return None
-    return None
 
 def get_latest_data(limit=100):
-    """Fetch latest telemetry data"""
+    """
+    Fetch latest telemetry data with limit.
+    
+    Args:
+        limit: Maximum number of records to fetch (default: 100)
+        
+    Returns:
+        pd.DataFrame: Latest telemetry data
+    """
+    # Enforce maximum limit to prevent memory issues
+    limit = min(limit, MAX_DATA_POINTS)
+    
     query = f"""
     SELECT 
         timestamp,
@@ -96,13 +186,19 @@ def get_latest_data(limit=100):
         is_overcrowded,
         is_high_power_draw
     FROM ATS_TRANSFORMED
+    WHERE timestamp >= DATEADD(hour, -24, CURRENT_TIMESTAMP())
     ORDER BY timestamp DESC
     LIMIT {limit}
     """
     return execute_query(query)
 
 def get_alerts():
-    """Fetch active alerts"""
+    """
+    Fetch recent active alerts (last 24 hours only).
+    
+    Returns:
+        pd.DataFrame: Recent alerts data
+    """
     query = """
     SELECT 
         timestamp,
@@ -112,13 +208,19 @@ def get_alerts():
         power_draw_kw,
         total_weight_tons
     FROM ATS_ALERTS
+    WHERE timestamp >= DATEADD(hour, -24, CURRENT_TIMESTAMP())
     ORDER BY timestamp DESC
-    LIMIT 20
+    LIMIT 50
     """
     return execute_query(query)
 
 def get_hourly_stats():
-    """Fetch hourly statistics"""
+    """
+    Fetch hourly statistics for the last 24 hours.
+    
+    Returns:
+        pd.DataFrame: Hourly aggregated statistics
+    """
     query = """
     SELECT 
         hour,
@@ -131,13 +233,19 @@ def get_hourly_stats():
         overcrowding_incidents,
         high_power_incidents
     FROM ATS_HOURLY_STATS
+    WHERE hour >= DATEADD(hour, -24, CURRENT_TIMESTAMP())
     ORDER BY hour DESC
     LIMIT 24
     """
     return execute_query(query)
 
 def get_train_status():
-    """Fetch latest status for each train"""
+    """
+    Fetch latest status for each train (active in last hour).
+    
+    Returns:
+        pd.DataFrame: Current status of all active trains
+    """
     query = """
     SELECT 
         train_id,
@@ -149,6 +257,7 @@ def get_train_status():
         is_overcrowded,
         is_high_power_draw
     FROM ATS_LATEST_STATUS
+    WHERE timestamp >= DATEADD(hour, -1, CURRENT_TIMESTAMP())
     ORDER BY train_id
     """
     return execute_query(query)

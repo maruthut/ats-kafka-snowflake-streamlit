@@ -5,16 +5,40 @@ Generates realistic train telemetry data and publishes to Kafka
 import json
 import time
 import random
+import signal
+import sys
 from datetime import datetime
-from confluent_kafka import Producer
+from confluent_kafka import Producer, KafkaException
 import os
+import logging
 
-# Kafka configuration
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Kafka configuration with improved settings
 conf = {
     'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092'),
-    'client.id': 'ats-simulator'
+    'client.id': 'ats-simulator',
+    'acks': 'all',  # Wait for all replicas to acknowledge
+    'retries': 3,  # Retry failed sends
+    'retry.backoff.ms': 1000,  # Wait 1s between retries
+    'max.in.flight.requests.per.connection': 1,  # Ensure ordering
+    'compression.type': 'snappy',  # Compress messages
+    'linger.ms': 100,  # Batch messages for 100ms
+    'batch.size': 16384  # Batch size in bytes
 }
-producer = Producer(conf)
+
+# Initialize producer with error handling
+try:
+    producer = Producer(conf)
+    logger.info("Kafka producer initialized successfully")
+except KafkaException as e:
+    logger.error(f"Failed to initialize Kafka producer: {e}")
+    sys.exit(1)
 
 # Constants
 EMPTY_TRAIN_WEIGHT_TONS = 135
@@ -22,9 +46,56 @@ AVG_PASSENGER_WEIGHT_KG = 65
 MAX_PASSENGERS = 764
 MAX_PASSENGER_LOAD = 600  # Threshold for overcrowding alert
 MAX_POWER_DRAW_KW = 150
+PUBLISH_INTERVAL_SECONDS = 30
+TRAIN_ID_RANGE = (100, 999)
+SPEED_MAX_KMH = 80
+
+# Graceful shutdown flag
+shutdown_flag = False
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully"""
+    global shutdown_flag
+    logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+    shutdown_flag = True
+
+# Register signal handlers
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
+def validate_telemetry(data):
+    """Validate telemetry data before sending"""
+    required_fields = ['timestamp', 'train_id', 'passenger_count', 'total_weight_tons', 
+                       'power_draw_kw', 'speed_kmh', 'location', 'alerts']
+    
+    for field in required_fields:
+        if field not in data:
+            logger.error(f"Missing required field: {field}")
+            return False
+    
+    # Validate ranges
+    if not (0 <= data['passenger_count'] <= MAX_PASSENGERS):
+        logger.error(f"Invalid passenger count: {data['passenger_count']}")
+        return False
+    
+    if data['speed_kmh'] < 0 or data['speed_kmh'] > SPEED_MAX_KMH:
+        logger.error(f"Invalid speed: {data['speed_kmh']}")
+        return False
+    
+    return True
 
 def simulate_passenger_count():
-    """Simulate realistic passenger count based on time of day and weekday"""
+    """
+    Simulate realistic passenger count based on time of day and weekday.
+    
+    Logic:
+    - Weekends: 20-100 passengers (light usage)
+    - Peak hours (7-10 AM, 5-8 PM): 200-764 passengers
+    - Off-peak: 50-200 passengers
+    
+    Returns:
+        int: Passenger count between 0 and MAX_PASSENGERS
+    """
     now = datetime.now()
     hour = now.hour
     weekday = now.weekday()  # 0=Monday, 6=Sunday
@@ -78,21 +149,40 @@ def generate_telemetry():
     return telemetry
 
 def delivery_report(err, msg):
-    """Callback for Kafka producer delivery reports"""
+    """
+    Callback for Kafka producer delivery reports.
+    
+    Args:
+        err: Error object if delivery failed
+        msg: Message object if delivery succeeded
+    """
     if err is not None:
-        print(f'❌ Message delivery failed: {err}')
+        logger.error(f'Message delivery failed: {err}')
     else:
-        print(f'✅ Message delivered to {msg.topic()} [{msg.partition()}]')
+        logger.debug(f'Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}')
 
 def run_simulator():
-    """Main simulator loop"""
-    print("🚆 Starting ATS Telemetry Simulator...")
-    print(f"📡 Publishing to Kafka at {conf['bootstrap.servers']}")
-    print(f"⏰ Publishing interval: 30 seconds\n")
+    """
+    Main simulator loop with graceful shutdown and error handling.
     
-    while True:
+    Publishes telemetry every PUBLISH_INTERVAL_SECONDS until shutdown signal received.
+    """
+    logger.info("🚆 Starting ATS Telemetry Simulator...")
+    logger.info(f"📡 Publishing to Kafka at {conf['bootstrap.servers']}")
+    logger.info(f"⏰ Publishing interval: {PUBLISH_INTERVAL_SECONDS} seconds\n")
+    
+    consecutive_failures = 0
+    max_consecutive_failures = 5
+    
+    while not shutdown_flag:
         try:
             data = generate_telemetry()
+            
+            # Validate data before sending
+            if not validate_telemetry(data):
+                logger.warning("Skipping invalid telemetry data")
+                time.sleep(PUBLISH_INTERVAL_SECONDS)
+                continue
             
             # Publish to Kafka
             producer.produce(
@@ -100,21 +190,39 @@ def run_simulator():
                 value=json.dumps(data),
                 callback=delivery_report
             )
-            producer.flush()
             
-            print(f"📊 Published: Train {data['train_id']} | "
-                  f"Passengers: {data['passenger_count']} | "
-                  f"Power: {data['power_draw_kw']}kW | "
-                  f"Alerts: {data['alerts']}")
+            # Flush with timeout to ensure delivery
+            producer.flush(timeout=10)
             
-            time.sleep(30)
+            # Reset failure counter on success
+            consecutive_failures = 0
             
-        except KeyboardInterrupt:
-            print("\n🛑 Simulator stopped by user")
-            break
-        except Exception as e:
-            print(f"⚠️ Error: {e}")
+            logger.info(f"📊 Published: Train {data['train_id']} | "
+                       f"Passengers: {data['passenger_count']} | "
+                       f"Power: {data['power_draw_kw']}kW | "
+                       f"Alerts: {data['alerts']}")
+            
+            time.sleep(PUBLISH_INTERVAL_SECONDS)
+            
+        except KafkaException as e:
+            consecutive_failures += 1
+            logger.error(f"Kafka error ({consecutive_failures}/{max_consecutive_failures}): {e}")
+            
+            if consecutive_failures >= max_consecutive_failures:
+                logger.critical("Max consecutive failures reached. Shutting down.")
+                break
+            
             time.sleep(5)
+            
+        except Exception as e:
+            consecutive_failures += 1
+            logger.error(f"Unexpected error: {e}")
+            time.sleep(5)
+    
+    # Graceful shutdown
+    logger.info("Flushing remaining messages...")
+    producer.flush(timeout=30)
+    logger.info("🛑 Simulator stopped gracefully")
 
 if __name__ == "__main__":
     run_simulator()

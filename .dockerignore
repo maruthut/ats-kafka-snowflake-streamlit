@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.pytest_cache
+.coverage
+htmlcov
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.local
+*.p8
+rsa_key*
+snowflake_key*
+
+# Documentation
+*.md
+LICENSE
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+temp/
+tmp/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
