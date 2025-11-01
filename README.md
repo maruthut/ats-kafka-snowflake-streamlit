@@ -11,7 +11,7 @@
 
 **Real-Time Data Engineering Portfolio Project**
 
-[🚀 Quick Start](#-quick-start) • [📸 Live Dashboard](docs/DASHBOARD_SCREENSHOTS.md) • [🔧 Troubleshooting](TROUBLESHOOTING.md) • [📖 Architecture](#-architecture)
+[🚀 Quick Start](#-quick-start) • [📸 Live Dashboard](docs/DASHBOARD_SCREENSHOTS.md) • [🔧 Troubleshooting](TROUBLESHOOTING.md) • [🏗️ Architecture](#️-architecture)
 
 </div>
 
