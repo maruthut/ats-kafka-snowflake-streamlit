@@ -128,21 +128,21 @@ GRANT USAGE ON STREAMLIT ATS_DB.ATS_SCHEMA.ATS_DASHBOARD_NATIVE TO ROLE SYSADMIN
 
 -- Verify deployment
 SHOW STREAMLITS IN SCHEMA ATS_SCHEMA;
-
--- Get dashboard URL
-SELECT SYSTEM$GET_STREAMLIT_URL('ATS_DB.ATS_SCHEMA.ATS_DASHBOARD_NATIVE') AS STREAMLIT_URL;
 ```
 
 ### Step 3: Access Your Dashboard
 
-1. **Via Snowsight UI:**
-   - Navigate to: **Streamlit** tab (left sidebar)
-   - Find: **ATS_DASHBOARD_NATIVE**
-   - Click to launch
+**Via Snowsight UI (Recommended):**
 
-2. **Via Direct URL:**
-   - Use the URL returned from `SYSTEM$GET_STREAMLIT_URL()` query
-   - Format: `https://app.snowflake.com/[region]/[account]/w[workspace_id]/#/streamlit-apps/ATS_DASHBOARD_NATIVE`
+1. Open Snowsight: https://app.snowflake.com
+2. Navigate to **Streamlit** tab (left sidebar)
+3. Find and click: **ATS_DASHBOARD_NATIVE**
+4. Dashboard will open in a new panel
+
+**Alternative Access Methods:**
+
+- **From Projects Menu:** Projects → Streamlit → ATS_DASHBOARD_NATIVE
+- **From Database Objects:** Navigate to ATS_DB → ATS_SCHEMA → Streamlit Apps → ATS_DASHBOARD_NATIVE → Right-click → Open in Streamlit
 
 ---
 
