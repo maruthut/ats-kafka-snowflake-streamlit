@@ -76,21 +76,15 @@ Multiple trains hovering around 148.5-150.5 kW range, triggering alerts
 
 ## 📊 Distribution Analytics
 
-### Passenger Distribution Histogram
+![Distribution Charts](images/distribution-charts.png)
 
-![Passenger Distribution](images/passenger-distribution.png)
-
-**Statistical Analysis:**
+**Passenger Distribution Histogram:**
 - Normal distribution of passenger counts across fleet
 - Range: 20-80 passengers
 - Peak frequency around 60-70 passengers
 - Helps identify capacity utilization patterns
 
-### Train Speed Distribution (Box Plot)
-
-![Speed Distribution](images/speed-distribution.png)
-
-**Speed Analysis:**
+**Train Speed Distribution (Box Plot):**
 - Box plot showing speed variance per train
 - Speed range: 0-80 km/h
 - Outlier detection for safety monitoring
@@ -100,21 +94,15 @@ Multiple trains hovering around 148.5-150.5 kW range, triggering alerts
 
 ## 📅 Hourly Statistics
 
-### Readings per Hour
+![Hourly Statistics](images/hourly-statistics.png)
 
-![Readings per Hour](images/readings-per-hour.png)
-
-**Data Ingestion Metrics:**
+**Readings per Hour:**
 - Previous hour (23:30-00:00): 35 readings
 - Current hour (00:30-01:00): 95 readings
 - Shows pipeline throughput and data flow consistency
 
-### Incidents per Hour
-
-![Incidents per Hour](images/incidents-per-hour.png)
-
-**Incident Tracking:**
-- 🟡 High Power incidents: Steady increase from 12 to 22 incidents
+**Incidents per Hour:**
+- 🟡 High Power incidents: Steady increase from 12 to 30+ incidents
 - 🔴 Overcrowding incidents: Flat line at 0 (no overcrowding detected)
 - Trend analysis for predictive maintenance
 
