@@ -242,6 +242,75 @@ http://localhost:8501
 
 You should see the ATS Real-Time Monitoring Dashboard with live telemetry data!
 
+## 🎨 Dual-Dashboard Architecture
+
+This project implements **two dashboard deployment models** to demonstrate architectural versatility:
+
+### 1️⃣ External Streamlit Dashboard (Docker-based)
+📍 **Location:** `streamlit_dashboard/app.py`  
+🌐 **Access:** `http://localhost:8501`  
+👥 **Target Audience:** Operational users (train operators, management)
+
+**Features:**
+- Runs as Docker container
+- External network access
+- Password authentication
+- Suitable for non-Snowflake users
+- Real-time data via ODBC connection
+
+### 2️⃣ Streamlit-in-Snowflake (Native)
+📍 **Location:** `snowflake/streamlit_in_snowflake/`  
+🌐 **Access:** Snowsight UI (`https://app.snowflake.com`)  
+👥 **Target Audience:** Data analysts, data engineers
+
+**Features:**
+- Runs inside Snowflake (zero-latency)
+- Automatic authentication via Snowflake session
+- Inherits Snowflake RBAC for security
+- No external infrastructure required
+- Direct Snowpark data access
+
+### 🆚 Comparison
+
+| Aspect | External Dashboard | Snowflake Native |
+|--------|-------------------|------------------|
+| **Infrastructure** | Docker container | Fully managed by Snowflake |
+| **Authentication** | Password/env vars | Snowflake session (automatic) |
+| **Network Latency** | Yes (external connection) | No (in-region access) |
+| **Security** | External credential mgmt | Inherits Snowflake RBAC |
+| **Target Users** | Anyone with URL | Snowflake account users |
+| **Deployment** | `docker-compose up` | SQL + file upload |
+| **Cost** | Infrastructure costs | Warehouse compute only |
+
+### 🚀 Deploy Snowflake Native Dashboard
+
+**Quick Start:**
+```bash
+# 1. Upload files to Snowflake stage (using SnowSQL)
+cd snowflake/streamlit_in_snowflake
+snowsql -a your_account -u your_user
+PUT file://streamlit_app.py @ATS_STREAMLIT_STAGE AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+
+# 2. Create Streamlit app (execute SQL)
+# See: snowflake/streamlit_in_snowflake/deploy_streamlit.sql
+
+# 3. Access via Snowsight
+# Navigate to: Streamlit > ATS_DASHBOARD_NATIVE
+```
+
+**📖 Full Documentation:** [`snowflake/streamlit_in_snowflake/README.md`](snowflake/streamlit_in_snowflake/README.md)
+
+### 💡 Why Two Dashboards?
+
+**Portfolio Differentiation:**
+- ✅ Shows architectural decision-making skills
+- ✅ Demonstrates Snowflake advanced features expertise
+- ✅ Proves ability to serve multiple user personas
+- ✅ Illustrates enterprise deployment patterns
+
+**Interview Talking Point:**
+> "I implemented dual dashboards to serve different personas: the external dashboard for operational monitoring by train operators, and the Snowflake-native version for data analysts who need zero-latency access within their existing Snowflake environment. This mirrors real-world enterprise architectures where you balance accessibility with security and performance."
+
 ## 📊 Dashboard Features
 
 The Streamlit dashboard provides:
