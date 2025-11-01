@@ -1,0 +1,156 @@
+🧠 Master Prompt for Copilot: ATS-Kafka-Snowflake-Streamlit ELT Project
+🚧 Project Goal:\ Build a containerized real-time data pipeline that simulates Automatic Train Supervision (ATS) telemetry, ingests it via Kafka, streams it into Snowflake using the Kafka Snowflake Sink Connector, and visualizes it using a Streamlit dashboard. The project should demonstrate ELT architecture using Snowflake VARIANT columns and dynamic tables. It should be modular, Docker-based, and suitable for showcasing on GitHub to future employers.
+
+📦 Project Structure
+ats-kafka-snowflake-streamlit/
+├── docker-compose.yml
+├── ats_simulator/
+│   └── producer.py
+├── kafka/
+│   └── config/
+├── kafka_connect/
+│   └── snowflake_connector_config.json
+├── streamlit_dashboard/
+│   └── app.py
+├── snowflake/
+│   └── schema.sql
+├── .env.example
+├── .gitignore
+└── README.md
+🧩 Components to Generate
+✅ 1. ATS Simulator (Python)
+Simulates realistic telemetry every 30 seconds and publishes JSON to Kafka.
+
+# producer.py
+import json, time, random
+from datetime import datetime
+from confluentkafka import Producer
+
+conf = {'bootstrap.servers': 'kafka:9092', 'client.id': 'ats-simulator'}
+producer = Producer(conf)
+
+EMPTYTRAINWEIGHTTONS = 135
+AVGPASSENGERWEIGHTKG = 65
+MAXPASSENGERS = 764
+MAXPASSENGERLOAD = 100
+MAXPOWERDRAWKW = 150
+
+def simulatepassengercount():
+    now = datetime.now()
+    hour, weekday = now.hour, now.weekday()
+    if weekday >= 5: base = random.randint(20, 100)
+    elif 7 <= hour <= 10 or 17 <= hour <= 20: base = random.randint(200, MAXPASSENGERS)
+    else: base = random.randint(50, 200)
+    return min(base, MAXPASSENGERS)
+
+def calculatetotalweight(passengercount):
+    return EMPTYTRAINWEIGHTTONS + (passengercount AVGPASSENGERWEIGHTKG / 1000)
+
+def estimatepowerdraw(weight): return round(80 + 0.5 weight, 2)
+
+def generatetelemetry():
+    pc = simulatepassengercount()
+    weight = calculatetotalweight(pc)
+    power = estimatepowerdraw(weight)
+    return {
+        "timestamp": datetime.utcnow().isoformat(),
+        "trainid": f"A{random.randint(100, 999)}",
+        "passengercount": pc,
+        "totalweighttons": round(weight, 2),
+        "powerdrawkw": power,
+        "alerts": {
+            "overcrowding": pc > MAXPASSENGERLOAD,
+            "highpowerdraw": power > MAXPOWERDRAWKW
+        }
+    }
+
+def runsimulator():
+    while True:
+        data = generatetelemetry()
+        producer.produce("atstelemetry", value=json.dumps(data))
+        producer.flush()
+        print(f"Published: {data}")
+        time.sleep(30)
+
+if name == "main": run_simulator()
+✅ 2. Kafka Broker
+Use standard Docker image. No custom code needed.
+
+✅ 3. Kafka Snowflake Connector Config
+{
+  "name": "snowflake-sink-connector",
+  "connector.class": "com.snowflake.kafka.connector.SnowflakeSinkConnector",
+  "topics": "atstelemetry",
+  "snowflake.topic2table.map": "atstelemetry:atsrawjson",
+  "snowflake.url.name": "youraccount.snowflakecomputing.com",
+  "snowflake.user.name": "${SNOWFLAKEUSER}",
+  "snowflake.private.key": "${SNOWFLAKEPRIVATEKEY}",
+  "snowflake.database.name": "YOURDB",
+  "snowflake.schema.name": "YOURSCHEMA",
+  "snowflake.role.name": "YOURROLE",
+  "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+  "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "value.converter.schemas.enable": "false",
+  "snowflake.ingestion.method": "SNOWPIPESTREAMING",
+  "snowflake.buffer.count.records": "1000",
+  "snowflake.buffer.flush.time": "60",
+  "snowflake.buffer.size.bytes": "5000000"
+}
+✅ 4. Snowflake SQL (ELT + Dynamic Table)
+-- Raw ingestion table
+CREATE OR REPLACE DYNAMIC TABLE atsrawjson (
+  rawdata VARIANT
+) TARGETLAG = '1 minute';
+
+-- Transformed view
+CREATE OR REPLACE VIEW atstransformed AS
+SELECT
+  rawdata:timestamp::TIMESTAMP AS timestamp,
+  rawdata:trainid::STRING AS trainid,
+  rawdata:passengercount::INT AS passengercount,
+  rawdata:totalweighttons::FLOAT AS totalweighttons,
+  rawdata:powerdrawkw::FLOAT AS powerdrawkw,
+  rawdata:alerts:overcrowding::BOOLEAN AS overcrowding,
+  rawdata:alerts:highpowerdraw::BOOLEAN AS highpowerdraw
+FROM atsrawjson;
+✅ 5. Streamlit Dashboard
+# app.py
+import streamlit as st
+import snowflake.connector
+import pandas as pd
+from dotenv import loaddotenv
+import os
+
+loaddotenv()
+
+conn = snowflake.connector.connect(
+    user=os.getenv("SNOWFLAKEUSER"),
+    password=os.getenv("SNOWFLAKEPASSWORD"),
+    account=os.getenv("SNOWFLAKEACCOUNT"),
+    warehouse=os.getenv("SNOWFLAKEWAREHOUSE"),
+    database=os.getenv("SNOWFLAKEDATABASE"),
+    schema=os.getenv("SNOWFLAKESCHEMA")
+)
+
+query = "SELECT * FROM atstransformed ORDER BY timestamp DESC LIMIT 100"
+df = pd.readsql(query, conn)
+
+st.title("🚆 ATS Real-Time Dashboard")
+st.linechart(df[['timestamp', 'passengercount']])
+st.linechart(df[['timestamp', 'powerdrawkw']])
+
+if df['overcrowding'].any():
+    st.error("⚠️ Overcrowding detected in recent data!")
+if df['highpower_draw'].any():
+    st.warning("🔥 High power draw — check substation load!")
+🔐 Security
+Use .env for Snowflake credentials.
+Add .env.example and .gitignore.
+📄 README.md Must Include
+Project overview
+Architecture diagram
+Setup instructions
+Screenshots/GIFs
+Deployment guide (Docker Desktop)
+Security note about .env
+ELT explanation (VARIANT → View)
