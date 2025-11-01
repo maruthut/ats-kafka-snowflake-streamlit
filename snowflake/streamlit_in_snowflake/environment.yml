@@ -1,0 +1,12 @@
+# Snowflake Streamlit Environment Configuration
+# This file specifies Python package dependencies for Streamlit-in-Snowflake
+
+name: streamlit
+channels:
+  - snowflake
+dependencies:
+  - python=3.10
+  - streamlit=1.31.0
+  - snowflake-snowpark-python
+  - pandas
+  - plotly
