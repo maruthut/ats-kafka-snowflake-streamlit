@@ -5,6 +5,15 @@
 -- Prerequisites: ATS_DB and views must already exist
 -- =====================================================================
 
+-- =====================================================================
+-- PREREQUISITE: Grant Permissions (Run as ACCOUNTADMIN first)
+-- =====================================================================
+-- If you get "Insufficient privileges" error, run these grants first:
+-- USE ROLE ACCOUNTADMIN;
+-- GRANT CREATE STAGE ON SCHEMA ATS_DB.ATS_SCHEMA TO ROLE SYSADMIN;
+-- GRANT CREATE STREAMLIT ON SCHEMA ATS_DB.ATS_SCHEMA TO ROLE SYSADMIN;
+-- =====================================================================
+
 USE ROLE SYSADMIN;
 USE DATABASE ATS_DB;
 USE SCHEMA ATS_SCHEMA;

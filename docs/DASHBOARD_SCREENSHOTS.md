@@ -1,12 +1,12 @@
 # 📸 Dashboard Screenshots
 
-Live screenshots of the ATS Real-Time Monitoring Dashboard showing the complete end-to-end data pipeline in action.
+Live screenshots of the ATS Real-Time Monitoring Dashboard (Streamlit-in-Snowflake Native) showing the complete end-to-end data pipeline in action.
 
 ---
 
 ## 🚆 Dashboard Overview
 
-![Dashboard Header](images/dashboard-header.png)
+![Dashboard Header](images/dashboard-header-sis.png)
 
 **Features Shown:**
 - ✅ Auto-refresh enabled (30-second intervals)
@@ -18,7 +18,7 @@ Live screenshots of the ATS Real-Time Monitoring Dashboard showing the complete 
 
 ## 📊 Key Performance Indicators (KPIs)
 
-![KPI Metrics](images/kpi-metrics.png)
+![KPI Metrics](images/kpi-metrics-sis.png)
 
 **Live Metrics:**
 - **Active Trains:** 115 trains online and transmitting telemetry
@@ -30,7 +30,7 @@ Live screenshots of the ATS Real-Time Monitoring Dashboard showing the complete 
 
 ## 🚨 Active Alerts System
 
-![Active Alerts](images/active-alerts.png)
+![Active Alerts](images/active-alerts-sis.png)
 
 **Alert Details:**
 - 🟡 HIGH_POWER_DRAW alerts for trains exceeding 150 kW threshold
@@ -44,9 +44,9 @@ Live screenshots of the ATS Real-Time Monitoring Dashboard showing the complete 
 
 ---
 
-## 📈 Real-Time Metrics - Passenger Count Timeline
+## 📈 Real-Time Metrics
 
-![Passenger Timeline](images/passenger-timeline.png)
+![Real-Time Metrics](images/real-time-metrics-sis.png)
 
 **Visualization Features:**
 - Multi-train tracking with color-coded lines
@@ -54,29 +54,23 @@ Live screenshots of the ATS Real-Time Monitoring Dashboard showing the complete 
 - Interactive Plotly charts with zoom/pan capabilities
 - Real-time updates every 30 seconds
 
-**Trains Tracked:**
-A356, A441, A341, A957, A794, A875, A535, A987, A934, A493, and more
-
----
-
-## ⚡ Real-Time Metrics - Power Draw Timeline
-
-![Power Timeline](images/power-timeline.png)
-
-**Key Features:**
-- Red dashed line showing 150 kW maximum threshold
+**Combined View:**
+- **Passenger Count Timeline:** Multi-train tracking with color-coded lines
+- **Power Draw Timeline:** Red dashed line showing 150 kW maximum threshold
 - Real-time power consumption monitoring
 - Automatic alert triggering when threshold exceeded
-- Historical trend analysis
+- Interactive Plotly charts with zoom/pan capabilities
 
-**Observed Pattern:**
-Multiple trains hovering around 148.5-150.5 kW range, triggering alerts
+**Observed Patterns:**
+- Multiple trains hovering around 148.5-150.5 kW range
+- Passenger counts distributed across 20-80 range
+- Time-series data from Snowflake Dynamic Tables
 
 ---
 
 ## 📊 Distribution Analytics
 
-![Distribution Charts](images/distribution-charts.png)
+![Distribution Charts](images/distribution-charts-sis.png)
 
 **Passenger Distribution Histogram:**
 - Normal distribution of passenger counts across fleet
@@ -94,7 +88,7 @@ Multiple trains hovering around 148.5-150.5 kW range, triggering alerts
 
 ## 📅 Hourly Statistics
 
-![Hourly Statistics](images/hourly-statistics.png)
+![Hourly Statistics](images/hourly-statistics-sis.png)
 
 **Readings per Hour:**
 - Previous hour (23:30-00:00): 35 readings
@@ -110,7 +104,7 @@ Multiple trains hovering around 148.5-150.5 kW range, triggering alerts
 
 ## 🚂 Train Status Overview Table
 
-![Train Status Table](images/train-status-table.png)
+![Train Status Table](images/train-status-table-sis.png)
 
 **Comprehensive Status Dashboard:**
 
@@ -181,12 +175,13 @@ Multiple trains hovering around 148.5-150.5 kW range, triggering alerts
 
 ## 📝 Screenshot Capture Details
 
-**Captured:** November 1, 2025, 01:42 UTC  
-**Environment:** Local Docker Compose deployment  
+**Captured:** November 1, 2025  
+**Environment:** Streamlit-in-Snowflake (Native)  
 **Data Source:** Live Snowflake database (ATS_DB.ATS_SCHEMA)  
 **Telemetry Age:** Real-time (within last 90 seconds)  
-**Dashboard Version:** Streamlit 1.31  
-**Browser:** Chrome/Edge on localhost:8501
+**Dashboard Version:** Streamlit-in-Snowflake  
+**Access:** Snowsight UI (https://app.snowflake.com)  
+**Theme:** Snowflake Native Dark Theme ✨
 
 ---
 
