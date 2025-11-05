@@ -33,6 +33,9 @@ wheels/
 credentials.txt
 secrets.txt
 
+# Troubleshooting (contains examples that might expose patterns)
+TROUBLESHOOTING.md
+
 # Docker
 docker-compose.override.yml
 
