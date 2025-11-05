@@ -27,6 +27,12 @@ wheels/
 .env
 .env.local
 
+# Credentials backup (NEVER COMMIT)
+.credentials.local
+*.credentials
+credentials.txt
+secrets.txt
+
 # Docker
 docker-compose.override.yml
 
