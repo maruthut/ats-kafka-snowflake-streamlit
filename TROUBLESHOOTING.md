@@ -21,7 +21,7 @@ If your Snowflake password contains special characters like `$`, Docker Compose 
 #### Step 1: Update `.env` file
 ```env
 # Use $$ (double dollar sign) to escape $ character
-SNOWFLAKE_PASSWORD=6Yt*2IHHt2^R$$Go
+SNOWFLAKE_PASSWORD=YourPassword$$Here
 ```
 
 #### Step 2: Update `docker-compose.yml`
@@ -29,13 +29,13 @@ SNOWFLAKE_PASSWORD=6Yt*2IHHt2^R$$Go
 streamlit-dashboard:
   environment:
     # Use array format (- KEY=VALUE) instead of mapping format
-    - SNOWFLAKE_ACCOUNT=vec76717.us-east-1
-    - SNOWFLAKE_USER=admin
-    - SNOWFLAKE_PASSWORD=6Yt*2IHHt2^R$$Go  # $$ becomes $ in container
-    - SNOWFLAKE_WAREHOUSE=COMPUTE_WH
-    - SNOWFLAKE_DATABASE=ATS_DB
-    - SNOWFLAKE_SCHEMA=ATS_SCHEMA
-    - SNOWFLAKE_ROLE=SYSADMIN
+    - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
+    - SNOWFLAKE_USER=${SNOWFLAKE_USER}
+    - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}  # Read from .env file
+    - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
+    - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
+    - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
+    - SNOWFLAKE_ROLE=${SNOWFLAKE_ROLE}
 ```
 
 #### Step 3: Restart Dashboard
@@ -48,8 +48,8 @@ docker-compose restart streamlit-dashboard
 # Check environment variable inside container
 docker exec streamlit-dashboard env | grep SNOWFLAKE_PASSWORD
 
-# Expected output (single $ character):
-SNOWFLAKE_PASSWORD=6Yt*2IHHt2^R$Go
+# Expected output (single $ character if you used $$):
+SNOWFLAKE_PASSWORD=YourPassword$Here
 ```
 
 #### Step 5: Check Dashboard Logs
@@ -155,13 +155,13 @@ Incorrect Snowflake account format. The account identifier must include region.
 From your Snowflake URL: `https://app.snowflake.com/{region}/{account}/`
 
 **Example:**
-- URL: `https://app.snowflake.com/us-east-1/vec76717/`
-- **Correct format:** `vec76717.us-east-1`
-- ❌ **Wrong:** `CGKEZXR-BJC29216` (organization/account combo)
+- URL: `https://app.snowflake.com/us-east-1/abc12345/`
+- **Correct format:** `abc12345.us-east-1`
+- ❌ **Wrong:** `ORGNAME-ACCTNAME` (organization/account combo)
 
 #### Update `.env`
 ```env
-SNOWFLAKE_ACCOUNT=vec76717.us-east-1
+SNOWFLAKE_ACCOUNT=your_account.your_region
 ```
 
 ---

@@ -22,7 +22,7 @@ This is the **Snowflake-native version** of the ATS Real-Time Monitoring Dashboa
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│            Snowflake Account (vec76717)             │
+│            Snowflake Account (Your Account)         │
 │                                                     │
 │  ┌──────────────────────────────────────────────┐  │
 │  │           ATS_DB Database                    │  │
@@ -81,7 +81,7 @@ streamlit_in_snowflake/
 
 ```bash
 # Connect to Snowflake
-snowsql -a vec76717.us-east-1 -u admin
+snowsql -a your_account.your_region -u your_username
 
 # Execute deployment SQL (creates stage)
 USE ROLE SYSADMIN;

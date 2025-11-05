@@ -84,7 +84,7 @@ cp .env.example .env
 ### Required Configuration:
 
 ```env
-# Use format: account_locator.region (e.g., vec76717.us-east-1)
+# Use format: account_locator.region (e.g., abc12345.us-east-1)
 # Find in Snowflake URL: https://app.snowflake.com/{region}/{account}/
 SNOWFLAKE_ACCOUNT=your_account.region
 
@@ -110,14 +110,14 @@ If your password contains `$` character, you **must** update `docker-compose.yml
 ```yaml
 streamlit-dashboard:
   environment:
-    # Use array format with $$ escaping
-    - SNOWFLAKE_ACCOUNT=vec76717.us-east-1
-    - SNOWFLAKE_USER=admin
-    - SNOWFLAKE_PASSWORD=MyPass$$Go  # $$ becomes $ in container
-    - SNOWFLAKE_WAREHOUSE=COMPUTE_WH
-    - SNOWFLAKE_DATABASE=ATS_DB
-    - SNOWFLAKE_SCHEMA=ATS_SCHEMA
-    - SNOWFLAKE_ROLE=SYSADMIN
+    # Use environment variable references from .env file
+    - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
+    - SNOWFLAKE_USER=${SNOWFLAKE_USER}
+    - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}
+    - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
+    - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
+    - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
+    - SNOWFLAKE_ROLE=${SNOWFLAKE_ROLE}
 ```
 
 ## 7. Verification Checklist
